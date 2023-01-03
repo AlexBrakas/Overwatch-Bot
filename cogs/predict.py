@@ -9,7 +9,7 @@ import requests
 from PIL import Image
 import shutil
 import os
-from music import predicted
+#from music import predicted #creating errors, need to change cog ordering to fix this
 
 from main import bot_chan
 
