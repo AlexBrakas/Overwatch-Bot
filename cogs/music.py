@@ -180,12 +180,21 @@ class Music(commands.Cog):
 
 
     async def youtube_search(self, item):
-        with YoutubeDL({'format': 'bestaudio', 'noplaylist':'True', 'audioformat':'mp3'}) as ydl:
-            try: 
-                info = ydl.extract_info("ytsearch:%s" % item, download=False)['entries'][0]
-            except Exception: 
+        with YoutubeDL({'format': 'bestaudio', 'audioformat':'mp3'}) as ydl:
+            try:
+                info_raw = ydl.extract_info("ytsearch:%s" % item, download=False)
+                if info_raw['_type'] == 'playlist':
+                    play_list = ydl.extract_info(info_raw['id'], download=False)
+                    info = list()
+                    for item in play_list['entries']:
+                        info.append({'source': item['formats'][0]['url'], 'title': item['title']})
+                    return info
+
+                else:
+                    info = info_raw['entries'][0]
+                    return [{'source': info['formats'][0]['url'], 'title': info['title']}]
+            except Exception as e: 
                 return False
-        return {'source': info['formats'][0]['url'], 'title': info['title']}
 
     def play_next(self):
         if len(self.music_queue) > 0:
@@ -228,12 +237,18 @@ class Music(commands.Cog):
         elif song == None:
             await ctx.reply("Please pass a song that you wish to play", delete_after=10)
         else:
-            song = await self.youtube_search(song)
-            if type(song) == type(True):
-                await ctx.reply("Song could not be download", delete_after=15)
+            await ctx.reply("Trying to download")
+            chan = ctx.channel
+            song_list = await self.youtube_search(song)
+            if type(song_list) == type(True):
+                await chan.send("Song could not be download", delete_after=15)
             else:
-                await ctx.reply(f"{song['title']} added to the queue", delete_after=15)
-                self.music_queue.append([song, voice_channel])
+                if type(song_list) == type(None):
+                    await chan.send("An error has occured", delete_after=10)
+                else:
+                    for song in song_list:
+                        await chan.send(f"{song['title']} added to the queue", delete_after=15)
+                        self.music_queue.append([song, voice_channel])
                 
                 if self.is_playing == False:
                     await self.play_music(ctx)
