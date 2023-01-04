@@ -152,7 +152,7 @@ class Music(commands.Cog):
         if self.vc != None:
             self.vc.pause()
             self.vc.resume()
-        await ctx.reply(f"Music Volume has been set to {volume}")
+        await ctx.reply(f"Music Volume has been set to {volume}", delete_after=25)
 
     async def timed_play(self, audio):
         while self.vc != None and self.repeat:
@@ -183,7 +183,8 @@ class Music(commands.Cog):
         with YoutubeDL({'format': 'bestaudio', 'audioformat':'mp3'}) as ydl:
             try:
                 info_raw = ydl.extract_info("ytsearch:%s" % item, download=False)
-                if info_raw['_type'] == 'playlist':
+                if 'playlist' in item:
+                    print(info_raw)
                     play_list = ydl.extract_info(info_raw['id'], download=False)
                     info = list()
                     for item in play_list['entries']:
@@ -237,7 +238,7 @@ class Music(commands.Cog):
         elif song == None:
             await ctx.reply("Please pass a song that you wish to play", delete_after=10)
         else:
-            await ctx.reply("Trying to download")
+            await ctx.reply("Trying to download", delete_after=20)
             chan = ctx.channel
             song_list = await self.youtube_search(song)
             if type(song_list) == type(True):
