@@ -32,6 +32,7 @@ alias for commands
 modulize more?
 convert multiple voice lines to simplifed function that calls with just location passed to save space and easy expansion
 add single para to FFmpeg to allow error catching, check if para is none (default pass) else reply
+fix help
 """
 
 predicted = False
@@ -43,11 +44,10 @@ class Music(commands.Cog):
         self.repeat = False
         self.short = 100
         self.long = 4000
-        self.is_playing = False
-        self.is_paused = False
         self.musicVolume = 0.3
         self.music_queue = []
         self.current = None
+        self.FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
     
     #@commands.Cog.listener()
     async def on_ready(self):
@@ -114,9 +114,10 @@ class Music(commands.Cog):
         location = 'characters_vc/Winston/Did_someone_say_peanut_butter.mp3'
         await self.char_voice_line(ctx, repeat, location)
         
-    @cog_ext.cog_slash(name="stop")
+    @cog_ext.cog_slash(name="stop", description="stops the repeats and will stop the current music or voice lines")
     async def stop(self, ctx:SlashContext):
         self.repeat = False
+        self.vc.stop()
         await ctx.reply("Stopping :rolling_eyes:", delete_after=5)
 
     @cog_ext.cog_slash(name="leave")
@@ -126,8 +127,6 @@ class Music(commands.Cog):
         else:
             await self.vc.disconnect()
             self.vc = None
-            self.is_playing = False
-            self.is_paused = False
             await ctx.reply("I am not your savior", delete_after=5)
 
     @cog_ext.cog_slash(name="min", description="The number of seconds the minium delay for the repeat")
@@ -184,7 +183,6 @@ class Music(commands.Cog):
             try:
                 info_raw = ydl.extract_info("ytsearch:%s" % item, download=False)
                 if 'playlist' in item:
-                    print(info_raw)
                     play_list = ydl.extract_info(info_raw['id'], download=False)
                     info = list()
                     for item in play_list['entries']:
@@ -197,18 +195,19 @@ class Music(commands.Cog):
             except Exception as e: 
                 return False
 
-    def play_next(self):
-        if len(self.music_queue) > 0:
-            self.is_playing = True
-            music_url = self.music_queue[0][0]['source']
-            self.current = self.music_queue.pop(0)
-            self.vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(music_url), self.musicVolume), after=lambda e: self.play_next())
+    def play_next(self, error=None):
+        if error == None:
+            if len(self.music_queue) > 0:
+                music_url = self.music_queue[0][0]['source']
+                self.current = self.music_queue.pop(0)[0]['title']
+                self.vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(music_url, **self.FFMPEG_OPTIONS), self.musicVolume), after=self.play_next)
+            else:
+                self.current = None
         else:
-            self.is_playing = False
+            self.bot.get_channel(bot_chan).send(error)
     
     async def play_music(self, ctx):
         if len(self.music_queue) > 0:
-            self.is_playing = True
             music_url = self.music_queue[0][0]['source']
             if self.vc == None or not self.vc.is_connected():
                 self.vc = await self.music_queue[0][1].connect()
@@ -217,10 +216,10 @@ class Music(commands.Cog):
                     return
             else:
                 await self.vc.move_to(self.music_queue[0][1])
-            self.music_queue.pop(0)
-            self.vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(music_url), self.musicVolume), after=lambda e:self.play_next())
+            self.current = self.music_queue.pop(0)[0]['title']
+            self.vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(music_url, **self.FFMPEG_OPTIONS), self.musicVolume), after=self.play_next)
         else:
-            self.is_playing = False
+            self.current = None
 
     @cog_ext.cog_slash(name="play", description="Resumes the music or adds a new song", options=[
         create_option(
@@ -233,8 +232,9 @@ class Music(commands.Cog):
         voice_channel = ctx.author.voice.channel
         if voice_channel is None:
             await ctx.reply("Connect to a voice channel!", delete_after=15)
-        elif self.is_paused:
+        elif self.vc.is_paused():
             self.vc.resume()
+            await ctx.reply("playing", delete_after=15)
         elif song == None:
             await ctx.reply("Please pass a song that you wish to play", delete_after=10)
         else:
@@ -251,17 +251,15 @@ class Music(commands.Cog):
                         await chan.send(f"{song['title']} added to the queue", delete_after=15)
                         self.music_queue.append([song, voice_channel])
                 
-                if self.is_playing == False:
+                if self.vc.is_playing() == False and self.current == None:
                     await self.play_music(ctx)
 
     @cog_ext.cog_slash(name="pause", description="Pauses the current song/voice line that is playing")
-    async def pause(self, ctx):
+    async def pause(self, ctx:SlashContext):
         try:
-            if self.is_playing:
-                self.is_playing = False
-                self.is_paused = True
+            if self.vc.is_playing():
                 self.vc.pause()
-                await ctx.reply("Paused")
+                await ctx.reply("Paused", delete_after=15)
             else:
                 raise Exception("The bot is currently not playing anything")
         except Exception as e:
@@ -269,27 +267,32 @@ class Music(commands.Cog):
             await self.bot.get_channel(bot_chan).send(e)
 
     @cog_ext.cog_slash(name="skip", description="skips the current track")
-    async def skip(self, ctx):
+    async def skip(self, ctx:SlashContext):
         if self.vc != None and self.vc:
             self.vc.stop()
             await self.play_music(ctx)
+            await ctx.reply("Skipped", delete_after=10)
 
+    @cog_ext.cog_slash(name="playing", description="Current song playing")
+    async def playing(self, ctx:SlashContext):
+        if self.vc.is_playing():
+            await ctx.reply(f"Currently playing: {self.current}", delete_after=15)
 
     @cog_ext.cog_slash(name="queue", description="Displays queue of songs")
     async def queue(self, ctx):
-        retval = ""
+        retval = "Currently playing: "+self.current+"\n"
         for i in range(0, len(self.music_queue)):
             if (i > 9): break
             retval += self.music_queue[i][0]['title'] + "\n"
 
         if retval != "":
-            await ctx.reply(retval)
+            await ctx.reply(retval, delete_afer=20)
         else:
-            await ctx.reply("No music in queue")
+            await ctx.reply("No music in queue", delete_after=10)
 
     @cog_ext.cog_slash(name="clear", description="abliterates the queue")
     async def clear(self, ctx):
-        if self.vc != None and self.is_playing:
+        if self.vc != None and self.vc.is_playing():
             self.vc.stop()
         self.music_queue = []
         await ctx.reply("Music queue cleared", delete_after=10)
