@@ -70,7 +70,7 @@ class MLImage(commands.Cog):
         if ctx.author.id != 305412029336911872:
             return
         char = "Junkrat"
-        self.set_up_char(ctx, char)
+        await self.set_up_char(ctx, char)
         
 
     @commands.command(pass_context=True, hidden=True)
@@ -78,14 +78,14 @@ class MLImage(commands.Cog):
         if ctx.author.id != 305412029336911872:
             return
         char = "Doomfist"
-        self.set_up_char(ctx, char)
+        await self.set_up_char(ctx, char)
 
     @commands.command(pass_context=True, hidden=True)
     async def winston(self, ctx):
         if ctx.author.id != 305412029336911872:
             return
         char = "Winston"
-        self.set_up_char(ctx, char)
+        await self.set_up_char(ctx, char)
 
 
 def setup(bot):

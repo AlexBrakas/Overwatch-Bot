@@ -45,13 +45,12 @@ class Predict(commands.Cog):
             file_loc = f"temp{ext}"
             with open(file_loc, "wb") as out_file:
                 shutil.copyfileobj(file.raw, out_file)
-            im = Image.open(file_loc)
+            img = Image.open(file_loc)
             file_loc = f"temp.jpg"
-            im = Image.im.convert("RGB")
-            im.save(file_loc)
+            img = img.convert("RGB")
 
             #must be jpg
-            img = Image.open(file_loc).resize((self.img_height, self.img_width), Image.ANTIALIAS)
+            img = img.resize((self.img_height, self.img_width), Image.ANTIALIAS)
             img_array = np.array(img, dtype=np.float32)
             img_array = tf.expand_dims(img_array, 0)
             self.model.allocate_tensors()
@@ -60,7 +59,6 @@ class Predict(commands.Cog):
             output_data = self.model.get_tensor(self._output_details[0]['index'])
             #predictions = self.model.predict(img_array)
             score = tf.nn.softmax(output_data)
-            os.remove(file_loc)
 
             await ctx.send(self.class_names[np.argmax(score)])
             await self.bot.get_channel(bot_chan).send(f"{self.class_names[np.argmax(score)]} with {100 * np.max(score)} confidence")

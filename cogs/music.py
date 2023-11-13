@@ -71,10 +71,12 @@ class Music(commands.Cog):
         try:
             if self.vc != None:
                 await ctx.reply("Try me", delete_after=5)
+                self.vc.pause()
                 audio_scr = discord.FFmpegPCMAudio(location)
                 self.vc.play(audio_scr)
                 if self.repeat:
                     await self.timed_play(location)
+                #self.vc.resume()
             else:
                 await ctx.reply("I know you can do better")
         except Exception as e:
