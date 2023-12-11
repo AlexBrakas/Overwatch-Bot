@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import PIL
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -19,7 +18,7 @@ data_dir = pathlib.Path(dataset_path)
 image_count = len(list(data_dir.glob('*/*.*')))
 
 #number of images before updated
-batch_size = 1
+batch_size = 5
 
 #resizing amounts
 img_height = 250
@@ -67,7 +66,7 @@ data_augmentation = keras.Sequential(
 )
 
 #dropout
-model = Sequential([
+model = keras.Sequential([
   data_augmentation,
   layers.Rescaling(1./255),
   layers.Conv2D(16, (3,3), padding='same', activation='relu'),
@@ -87,12 +86,15 @@ model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-epochs = 6
-history = model.fit(
-  train_ds,
-  validation_data=val_ds,
-  epochs=epochs
+try:
+  epochs = 6
+  history = model.fit(
+    train_ds,
+    validation_data=val_ds,
+    epochs=epochs
 )
+except tf.errors.InvalidArgumentError as InvalidArg:
+  print(InvalidArg)
 
 #visualize results
 acc = history.history['accuracy']
