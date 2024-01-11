@@ -10,7 +10,7 @@ from prefix import get_prefix
 
 #load_dotenv()
 creator_id = int(os.getenv('owner_id'))
-aaron_id = int(os.getenv('aaron_id'))
+aaron_id = int(os.getenv('owner2_id'))
 bot_chan = int(os.getenv('error_chan'))
 
 owner_id = {creator_id, aaron_id}

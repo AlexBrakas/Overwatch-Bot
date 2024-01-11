@@ -14,3 +14,4 @@ char_list.txt
 *.png
 *.jpg
 .venv
+new_training.py

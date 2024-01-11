@@ -40,7 +40,7 @@ class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
-        self.vc = None
+        self.vc = discord.VoiceClient()
         self.repeat = False
         self.short = 100
         self.long = 4000
@@ -59,7 +59,7 @@ class Music(commands.Cog):
         if not ctx.author.voice:
             await ctx.reply("You test my patience, join a vc")
         else:
-            if self.vc != None:
+            if self.vc.is_connected():
                 await ctx.reply("You test my patience")
             else:
                 self.vc = await ctx.author.voice.channel.connect()
@@ -69,7 +69,7 @@ class Music(commands.Cog):
         if repeat.lower() == "y" or repeat.lower() == "yes":
             self.repeat = True
         try:
-            if self.vc != None:
+            if self.vc.is_connected():
                 await ctx.reply("Try me", delete_after=5)
                 self.vc.pause()
                 audio_scr = discord.FFmpegPCMAudio(location)
@@ -124,12 +124,12 @@ class Music(commands.Cog):
 
     @cog_ext.cog_slash(name="leave")
     async def leave(self, ctx:SlashContext):
-        if self.vc == None:
-            await ctx.reply("You must be jokin, I am not in a vc", delete_after=10)
-        else:
+        if self.bot.is_connected():
             await self.vc.disconnect()
-            self.vc = None
+            self.vc = discord.VoiceClient()
             await ctx.reply("I am not your savior", delete_after=5)
+        else:
+            await ctx.reply("You must be jokin, I am not in a vc", delete_after=10)
 
     @cog_ext.cog_slash(name="min", description="The number of seconds the minium delay for the repeat")
     async def min(self, ctx:SlashContext, number:int):
@@ -150,13 +150,13 @@ class Music(commands.Cog):
             )])
     async def vol(self, ctx:SlashContext, volume:int):
         self.musicVolume = volume/100
-        if self.vc != None:
+        if self.vc.is_connected():
             self.vc.pause()
             self.vc.resume()
         await ctx.reply(f"Music Volume has been set to {volume}", delete_after=25)
 
     async def timed_play(self, audio):
-        while self.vc != None and self.repeat:
+        while self.vc.is_connected() and self.repeat:
             if not self.vc.is_playing():
                 audio_scr = discord.FFmpegPCMAudio(audio)
                 self.vc.play(audio_scr)
@@ -270,7 +270,7 @@ class Music(commands.Cog):
 
     @cog_ext.cog_slash(name="skip", description="skips the current track")
     async def skip(self, ctx:SlashContext):
-        if self.vc != None and self.vc:
+        if self.vc.is_connected() and self.vc:
             self.vc.stop()
             await self.play_music(ctx)
             await ctx.reply("Skipped", delete_after=10)
@@ -294,7 +294,7 @@ class Music(commands.Cog):
 
     @cog_ext.cog_slash(name="clear", description="abliterates the queue")
     async def clear(self, ctx):
-        if self.vc != None and self.vc.is_playing():
+        if self.vc.is_connected() and self.vc.is_playing():
             self.vc.stop()
         self.music_queue = []
         await ctx.reply("Music queue cleared", delete_after=10)

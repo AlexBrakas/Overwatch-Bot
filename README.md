@@ -11,7 +11,7 @@ The model must be pretrained from the training_pc.py file, this was done since n
 
 Discord_token = TOKEN
 owner_id = YOUR_ID
-aaron_id = ANOTHER_OWNERS_ID
+owner2_id = ANOTHER_OWNERS_ID
 error_chan = CHANNEL_FOR_ERRORS
 
 

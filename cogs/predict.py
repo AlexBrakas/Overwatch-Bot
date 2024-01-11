@@ -24,7 +24,7 @@ class Predict(commands.Cog):
         with open("train.json", "r") as file:
             self.class_names = json.load(file)
         
-    @commands.Cog.listener()
+    #@commands.Cog.listener()
     async def on_ready(self):
         await self.bot.get_channel(bot_chan).send("bot is ready, here is the graph for the current model being used")
         await self.bot.get_channel(bot_chan).send(file=discord.File(r"training_validation_loss.png"))
