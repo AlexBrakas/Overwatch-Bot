@@ -1,29 +1,15 @@
 import discord
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
-from discord_slash.utils.manage_commands import create_choice, create_option
+from discord import app_commands
 import nacl #1.5.0
 from random import randint, choice
 from asyncio import sleep as sl
 from os import listdir
 from time import sleep
 from youtube_dl import YoutubeDL
+from typing import Literal
 
 from main import bot_chan
-
-'''
-option_types:
-    Sub_command: 1
-    Sub_command_group: 2
-    String: 3
-    Integer: 4
-    Boolean: 5
-    User: 6
-    Channel: 7
-    Role: 8
-    Mentionable: 9
-    Float: 10
-'''
 
 """
 Follow command, follows an individual and just plays what ever command is ask over and over again
@@ -35,12 +21,12 @@ add single para to FFmpeg to allow error catching, check if para is none (defaul
 fix help
 """
 
-predicted = False
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
         self.vc = discord.VoiceClient()
+        self.predicted = False
         self.repeat = False
         self.short = 100
         self.long = 4000
@@ -51,11 +37,10 @@ class Music(commands.Cog):
     
     #@commands.Cog.listener()
     async def on_ready(self):
-        global predicted
-        await self.predict_check(predicted)
+        await self.predict_check(self.predicted)
 
-    @cog_ext.cog_slash(name="join", description="Joins the current voice channel that the member is in")
-    async def join(self, ctx:SlashContext):
+    @app_commands.command(name="join", description="Bot Joins the VC")
+    async def join(self, ctx:discord.Interaction):
         if not ctx.author.voice:
             await ctx.reply("You test my patience, join a vc")
         else:
@@ -65,7 +50,7 @@ class Music(commands.Cog):
                 self.vc = await ctx.author.voice.channel.connect()
                 await ctx.reply("Talk to the fist", delete_after=5)
     
-    async def char_voice_line(self, ctx:SlashContext, repeat, location):
+    async def char_voice_line(self, ctx:discord.Interaction, repeat, location):
         if repeat.lower() == "y" or repeat.lower() == "yes":
             self.repeat = True
         try:
@@ -83,47 +68,32 @@ class Music(commands.Cog):
             await ctx.reply("I find your lack of belief troubling", delete_after=10)
             await self.bot.get_channel(bot_chan).send(e)
 
-    @cog_ext.cog_slash(name="conflict", description="Our Future Will Be Forged In Conflict", options=[
-        create_option(
-            name="repeat",
-            description="Repeat?(Y/N)",
-            required=False,
-            option_type=3
-        )])
-    async def conflict(self, ctx:SlashContext, repeat:str="n"):
+    @app_commands.command(name="conflict", description="Our Future Will Be Forged In Conflict")
+    @app_commands.describe(repeat="Repeat the line?")
+    async def conflict(self, ctx:discord.Interaction, repeat:Literal['y','n']="n"):
         location ='characters_vc/Doomfist/Our_future_will_be_forged_in_conflict.mp3'
         await self.char_voice_line(ctx, repeat, location)
     
-    @cog_ext.cog_slash(name="dip", description="You Dip Stick", options=[
-        create_option(
-            name="repeat",
-            description="Repeat?(Y/N)",
-            required=False,
-            option_type=3
-        )])
-    async def dip(self, ctx:SlashContext, repeat:str="n"):
+    @app_commands.command(name="dip", description="You Dip Stick")
+    @app_commands.describe(repeat="Repeat the line?")
+    async def dip(self, ctx:discord.Interaction, repeat:Literal['y','n']="n"):
         location = 'characters_vc/Junkrat/you dip stick.mp3'
         await self.char_voice_line(ctx, repeat, location)  
 
-    @cog_ext.cog_slash(name="peanut", description="Did someone say peanut butter?", options=[
-        create_option(
-            name="repeat",
-            description="Repeat?(Y/N)",
-            required=False,
-            option_type=3
-        )])
-    async def peanut(self, ctx:SlashContext, repeat:str="n"):
+    @app_commands.command(name="peanut", description="Did someone say peanut butter?")
+    @app_commands.describe(repeat="Repeat the line?")
+    async def peanut(self, ctx:discord.Interaction, repeat:Literal['y','n']="n"):
         location = 'characters_vc/Winston/Did_someone_say_peanut_butter.mp3'
         await self.char_voice_line(ctx, repeat, location)
         
-    @cog_ext.cog_slash(name="stop", description="stops the repeats and will stop the current music or voice lines")
-    async def stop(self, ctx:SlashContext):
+    @app_commands.command(name="stop", description="stops the repeats and will stop the current music or voice lines")
+    async def stop(self, ctx:discord.Interaction):
         self.repeat = False
         self.vc.stop()
         await ctx.reply("Stopping :rolling_eyes:", delete_after=5)
 
-    @cog_ext.cog_slash(name="leave")
-    async def leave(self, ctx:SlashContext):
+    @app_commands.command(name="leave")
+    async def leave(self, ctx:discord.Interaction):
         if self.bot.is_connected():
             await self.vc.disconnect()
             self.vc = discord.VoiceClient()
@@ -131,24 +101,21 @@ class Music(commands.Cog):
         else:
             await ctx.reply("You must be jokin, I am not in a vc", delete_after=10)
 
-    @cog_ext.cog_slash(name="min", description="The number of seconds the minium delay for the repeat")
-    async def min(self, ctx:SlashContext, number:int):
+    @app_commands.command(name="min", description="The number of seconds the minium delay for the repeat")
+    @app_commands.describe(number="Number of seconds")
+    async def min(self, ctx:discord.Interaction, number:int):
         self.short = number
         await ctx.reply(f"The minium time between plays has been updated to {number}")
 
-    @cog_ext.cog_slash(name="max", description="The number of seconds the maxium delay for the repeat")
-    async def max(self, ctx:SlashContext, number:int):
+    @app_commands.command(name="max", description="The number of seconds the maxium delay for the repeat")
+    @app_commands.command(number="Number of seconds")
+    async def max(self, ctx:discord.Interaction, number:int):
         self.long = number
         await ctx.reply(f"The maxium time between plays has been updated to {number}")
     
-    @cog_ext.cog_slash(name="vol", description="Sets the music volume", options=[
-        create_option(
-            name="volume",
-            description="The number you want the volume to be set to",
-            option_type=4,
-            required=True
-            )])
-    async def vol(self, ctx:SlashContext, volume:int):
+    @app_commands.command(name="vol", description="Sets the music volume")
+    @app_commands.describe(volume='Volume')
+    async def vol(self, ctx:discord.Interaction, volume:int):
         self.musicVolume = volume/100
         if self.vc.is_connected():
             self.vc.pause()
@@ -176,8 +143,7 @@ class Music(commands.Cog):
         while self.vc.is_playing():
             sleep(0.5)
         self.vc.resume()
-        global predicted
-        predicted = False
+        self.predicted = False
 
 
     async def youtube_search(self, item):
@@ -223,14 +189,9 @@ class Music(commands.Cog):
         else:
             self.current = None
 
-    @cog_ext.cog_slash(name="play", description="Resumes the music or adds a new song", options=[
-        create_option(
-            name="song",
-            description="Name or link of song",
-            required=False,
-            option_type=3
-        )])
-    async def play(self, ctx:SlashContext, song:str=None):
+    @app_commands.command(name="play", description="Resumes the music or adds a new song")
+    @app_commands.describe(song="Name or link of song")
+    async def play(self, ctx:discord.Interaction, song:str=None):
         voice_channel = ctx.author.voice.channel
         if voice_channel is None:
             await ctx.reply("Connect to a voice channel!", delete_after=15)
@@ -256,8 +217,8 @@ class Music(commands.Cog):
                 if self.vc.is_playing() == False and self.current == None:
                     await self.play_music(ctx)
 
-    @cog_ext.cog_slash(name="pause", description="Pauses the current song/voice line that is playing")
-    async def pause(self, ctx:SlashContext):
+    @app_commands.command(name="pause", description="Pauses the current song/voice line that is playing")
+    async def pause(self, ctx:discord.Interaction):
         try:
             if self.vc.is_playing():
                 self.vc.pause()
@@ -268,19 +229,19 @@ class Music(commands.Cog):
             await ctx.reply(e, delete_after=5)
             await self.bot.get_channel(bot_chan).send(e)
 
-    @cog_ext.cog_slash(name="skip", description="skips the current track")
-    async def skip(self, ctx:SlashContext):
+    @app_commands.command(name="skip", description="skips the current track")
+    async def skip(self, ctx:discord.Interaction):
         if self.vc.is_connected() and self.vc:
             self.vc.stop()
             await self.play_music(ctx)
             await ctx.reply("Skipped", delete_after=10)
 
-    @cog_ext.cog_slash(name="playing", description="Current song playing")
-    async def playing(self, ctx:SlashContext):
+    @app_commands.command(name="playing", description="Current song playing")
+    async def playing(self, ctx:discord.Interaction):
         if self.vc.is_playing():
             await ctx.reply(f"Currently playing: {self.current}", delete_after=15)
 
-    @cog_ext.cog_slash(name="queue", description="Displays queue of songs")
+    @app_commands.command(name="queue", description="Displays queue of songs")
     async def queue(self, ctx):
         retval = "Currently playing: "+self.current+"\n"
         for i in range(0, len(self.music_queue)):
@@ -292,7 +253,7 @@ class Music(commands.Cog):
         else:
             await ctx.reply("No music in queue", delete_after=10)
 
-    @cog_ext.cog_slash(name="clear", description="abliterates the queue")
+    @app_commands.command(name="clear", description="abliterates the queue")
     async def clear(self, ctx):
         if self.vc.is_connected() and self.vc.is_playing():
             self.vc.stop()

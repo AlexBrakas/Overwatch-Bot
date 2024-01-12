@@ -9,10 +9,10 @@ The model must be pretrained from the training_pc.py file, this was done since n
 **May have to uncomment load_dotenv within main.py**
 ### .env file structure: 
 
-Discord_token = TOKEN
-owner_id = YOUR_ID
-owner2_id = ANOTHER_OWNERS_ID
-error_chan = CHANNEL_FOR_ERRORS
+Discord_token = TOKEN \
+owner_id = YOUR_ID \
+owner2_id = ANOTHER_OWNERS_ID \
+error_chan = CHANNEL_FOR_ERRORS \
 
 
 ### Currently working on:

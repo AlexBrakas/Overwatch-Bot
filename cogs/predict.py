@@ -2,8 +2,6 @@ import tensorflow as tf
 import numpy as np
 import discord
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
-from discord_slash.utils.manage_commands import create_choice, create_option
 import json
 import requests
 from PIL import Image

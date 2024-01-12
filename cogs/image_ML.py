@@ -1,6 +1,5 @@
 import discord #1.7.3
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext #3.0.3
 import tensorflow as tf #2.11.0
 import numpy as np #1.21.6
 from PIL import Image #9.3.0

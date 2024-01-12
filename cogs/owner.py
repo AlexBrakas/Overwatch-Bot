@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import json
 from prefix import get_prefix
-from discord_slash import SlashContext, cog_ext
 
 class Owner(commands.Cog):
     def __init__(self, bot):
@@ -41,9 +41,9 @@ class Owner(commands.Cog):
     async def error_update_data(self, ctx:commands.Context, error):
         await ctx.message.channel.send(error)
 
-    @cog_ext.cog_slash()
-    async def info(self, ctx:SlashContext):
-        await ctx.reply(f"This bot was developed by Alex Brakas\nDiscord tag: Cyepher#0684\nPackages used: \m>discord py - 1.7.3\n>discord_slash - 3.0.3\n>tensorflow - 2.11.0\n>numpy - 1.21.6\n>matplotlib - 3.5.3\n>PIL - 9.3.0\n>nacl - 1.5.0")
+    @app_commands.command(name="info", description="Gives information about the bot")
+    async def info(self, ctx:discord.Interaction):
+        await ctx.reply(f"This bot was developed by Alex Brakas\nDiscord tag: Cyepher\nMore information on GitHub about the bot")
 
 
 def setup(bot):

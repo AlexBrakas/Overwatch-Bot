@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord_slash import SlashContext, cog_ext
+from discord import app_commands
 
 class Help(commands.Cog):
     def __init__(self, bot):
@@ -8,8 +8,8 @@ class Help(commands.Cog):
         self.bot = bot
         
 
-    @cog_ext.cog_slash(name="help")
-    async def help(self, ctx:SlashContext):
+    @app_commands(name="help")
+    async def help(self, ctx:discord.Interaction):
         cogs_desc = ''
         for cog in self.bot.cogs:
             cogs_desc += f'`{cog}` {self.bot.cogs[cog].__doc__}\n'
