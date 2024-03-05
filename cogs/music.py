@@ -21,7 +21,7 @@ add single para to FFmpeg to allow error catching, check if para is none (defaul
 fix help
 """
 
-class Music(commands.Cog):
+class Music(commands.GroupCog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
