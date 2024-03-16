@@ -8,7 +8,7 @@ class Help(commands.Cog):
         self.bot = bot
         
 
-    @app_commands(name="help")
+    @app_commands.command(name="help")
     async def help(self, ctx:discord.Interaction):
         cogs_desc = ''
         for cog in self.bot.cogs:
