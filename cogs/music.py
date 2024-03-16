@@ -40,7 +40,7 @@ class Music(commands.GroupCog):
         await self.predict_check(self.predicted)
 
     @app_commands.command(name="join", description="Bot Joins the VC")
-    async def join(self, ctx:discord.Interaction):
+    async def join(self, ctx: discord.Interaction):
         if not ctx.author.voice:
             await ctx.reply("You test my patience, join a vc")
         else:
@@ -261,4 +261,4 @@ class Music(commands.GroupCog):
         await ctx.reply("Music queue cleared", delete_after=10)
 
 def setup(bot: commands.bot):
-    bot.add_cog(Music(bot))
+    bot.tree(Music(bot))
